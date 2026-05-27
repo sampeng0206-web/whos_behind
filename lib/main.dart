@@ -1,7 +1,31 @@
 import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'services/billing_service.dart';
+import 'services/ad_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase Core initialization failed: $e");
+  }
+
+  try {
+    await AdService.initialize();
+  } catch (e) {
+    debugPrint("AdService initialization failed: $e");
+  }
+
+  try {
+    await BillingService.initialize();
+  } catch (e) {
+    debugPrint("BillingService initialization failed: $e");
+  }
+
   runApp(const WhosBehindApp());
 }
 

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // 引入 kIsWeb 判斷庫
 import 'package:url_launcher/url_launcher.dart';
 import '../core/db_helper.dart';
+import '../services/pdf_generator_service.dart';
+import '../services/billing_service.dart';
+import '../services/ad_service.dart';
 
 class PhoneSearchScreen extends StatefulWidget {
   const PhoneSearchScreen({super.key});
@@ -11,6 +15,8 @@ class PhoneSearchScreen extends StatefulWidget {
 
 class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
   final _phoneController = TextEditingController();
+  final _anchorUrlController = TextEditingController(); // 定錨網址控制器
+  
   bool _isSearching = false;
   String? _selectedMode;
   DateTime? _savedTimestamp;
@@ -19,20 +25,55 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
     'facebook': null,
     'dcard': null,
     'ptt': null,
+    'threads': null,
   };
+
+  // 模擬進度與視窗引導狀態
+  bool _isSimulatingProgress = false;
+  double _searchProgress = 0.0;
+  bool _showInitialSearchGuide = false;
+  bool _isDeepSearching = false;
+  double _deepSearchProgress = 0.0;
+  bool _showDeepSearchGuide = false;
 
   @override
   void initState() {
     super.initState();
+    // 確保每次進入頁面時，狀態與輸入框都被清空
+    _phoneController.clear();
+    _anchorUrlController.clear();
+    _isSearching = false;
+    _savedTimestamp = null;
+    _isSimulatingProgress = false;
+    _searchProgress = 0.0;
+    _showInitialSearchGuide = false;
+    _isDeepSearching = false;
+    _deepSearchProgress = 0.0;
+    _showDeepSearchGuide = false;
+    
+    _platformStatus = {
+      'google': null,
+      'facebook': null,
+      'dcard': null,
+      'ptt': null,
+      'threads': null,
+    };
+
     _phoneController.addListener(() {
       if (_savedTimestamp != null) {
         setState(() {
           _savedTimestamp = null;
+          _showInitialSearchGuide = false;
+          _showDeepSearchGuide = false;
+          _isSimulatingProgress = false;
+          _isDeepSearching = false;
+          _anchorUrlController.clear();
           _platformStatus = {
             'google': null,
             'facebook': null,
             'dcard': null,
             'ptt': null,
+            'threads': null,
           };
         });
       }
@@ -52,50 +93,107 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
 
   Future<void> _searchAndSavePhone() async {
     final phone = _phoneController.text.trim();
-    if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('請輸入電話號碼')),
-      );
+    final phoneRegex = RegExp(r'^[\d\+\-\s\(\)]+$');
+
+    if (phone.isEmpty || !phoneRegex.hasMatch(phone)) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('提示 / Notice', style: TextStyle(color: Colors.white)),
+            content: const Text('請輸入正確的電話號碼 / Please enter a valid number', style: TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('確定 / OK', style: TextStyle(color: Colors.redAccent)),
+              ),
+            ],
+          ),
+        );
+      }
       return;
     }
 
     setState(() {
       _isSearching = true;
+      _isSimulatingProgress = true;
+      _searchProgress = 0.0;
+      _showInitialSearchGuide = false;
+      _showDeepSearchGuide = false;
     });
 
     try {
-      // 1. 存證
-      final record = EvidenceRecord(
-        type: 'phone',
-        content: phone,
-        timestamp: DateTime.now().toIso8601String(),
-      );
-      await DatabaseHelper.instance.insertEvidence(record);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('電話號碼已自動存入清單作為證據。請選擇搜尋入口。')),
-        );
+      // 模擬進度條動態增長 (2秒)
+      for (int i = 1; i <= 20; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (!mounted) return;
         setState(() {
-          _savedTimestamp = DateTime.now();
-          _platformStatus = {
-            'google': null,
-            'facebook': null,
-            'dcard': null,
-            'ptt': null,
-          };
+          _searchProgress = i / 20.0;
         });
+      }
+
+      if (kIsWeb) {
+        if (mounted) {
+          setState(() {
+            _savedTimestamp = DateTime.now();
+            _showInitialSearchGuide = true; // 顯示手動引導，避免被攔截
+            _platformStatus = {
+              'google': null,
+              'facebook': null,
+              'dcard': null,
+              'ptt': null,
+              'threads': null,
+            };
+          });
+        }
+      } else {
+        // 1. 本機存證
+        final record = EvidenceRecord(
+          type: 'phone',
+          content: phone,
+          timestamp: DateTime.now().toIso8601String(),
+        );
+        await DatabaseHelper.instance.insertEvidence(record);
+
+        if (mounted) {
+          setState(() {
+            _savedTimestamp = DateTime.now();
+            _showInitialSearchGuide = true; // 顯示手動引導，避免被攔截
+            _platformStatus = {
+              'google': null,
+              'facebook': null,
+              'dcard': null,
+              'ptt': null,
+              'threads': null,
+            };
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('發生錯誤: $e')),
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('錯誤 / Error', style: TextStyle(color: Colors.white)),
+            content: Text('處理時發生錯誤 / An error occurred:\n$e', style: const TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('確定 / OK', style: TextStyle(color: Colors.redAccent)),
+              ),
+            ],
+          ),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
           _isSearching = false;
+          _isSimulatingProgress = false;
         });
       }
     }
@@ -104,6 +202,7 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _anchorUrlController.dispose();
     super.dispose();
   }
 
@@ -119,8 +218,12 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
+                  _phoneController.clear();
                   setState(() {
                     _selectedMode = null;
+                    _savedTimestamp = null;
+                    _isSearching = false;
+                    _platformStatus = {'google': null, 'facebook': null, 'dcard': null, 'ptt': null, 'threads': null};
                   });
                 },
               )
@@ -128,6 +231,7 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _selectedMode != null ? _buildInputScreen() : _buildSelectionScreen(),
+      bottomNavigationBar: const AdBannerWidget(),
     );
   }
 
@@ -161,8 +265,12 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
                   borderColor: const Color(0xFFFF3B30),
                   shadowColor: const Color(0xFFFF3B30).withOpacity(0.4),
                   onTap: () {
+                    _phoneController.clear();
                     setState(() {
                       _selectedMode = 'received';
+                      _savedTimestamp = null;
+                      _isSearching = false;
+                      _platformStatus = {'google': null, 'facebook': null, 'dcard': null, 'ptt': null, 'threads': null};
                     });
                   },
                 ),
@@ -179,8 +287,12 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
                   borderColor: const Color(0xFFFF9500),
                   shadowColor: const Color(0xFFFF9500).withOpacity(0.4),
                   onTap: () {
+                    _phoneController.clear();
                     setState(() {
                       _selectedMode = 'leaked';
+                      _savedTimestamp = null;
+                      _isSearching = false;
+                      _platformStatus = {'google': null, 'facebook': null, 'dcard': null, 'ptt': null, 'threads': null};
                     });
                   },
                 ),
@@ -315,7 +427,42 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              if (_isSearching)
+              if (_isSimulatingProgress) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(color: Colors.redAccent),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '正在交叉比對全台商務黃頁與反詐資料庫...',
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${(_searchProgress * 100).toInt()}%',
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: _searchProgress,
+                          backgroundColor: Colors.grey[900],
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.redAccent),
+                          minHeight: 6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else if (_isSearching)
                 const Center(child: CircularProgressIndicator(color: Colors.redAccent))
               else if (_savedTimestamp == null)
                 ElevatedButton.icon(
@@ -366,6 +513,57 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (_showInitialSearchGuide) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.redAccent, width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.shield, color: Colors.redAccent, size: 40),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '安全比對已完成 / Ready',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '為繞過瀏覽器攔截，請「主動點擊下方按鈕」開啟 Google 鑑識網頁：',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final rawPhone = _phoneController.text.trim();
+                        String searchUrl = '';
+                        if (_selectedMode == 'received') {
+                          searchUrl = 'https://www.google.com/search?q=$rawPhone';
+                        } else if (_selectedMode == 'leaked') {
+                          searchUrl = 'https://www.google.com/search?q="%e2%80%9d$rawPhone"%e2%80%9d';
+                        }
+                        _openUrl(searchUrl);
+                      },
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('前往 Google 鑑識網頁', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -460,9 +658,10 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
           const SizedBox(height: 16),
           
           _buildPlatformRow('google', '🔍', 'Google 搜尋', 'https://www.google.com/search?q=$phone'),
-          _buildPlatformRow('facebook', '📘', 'Facebook 搜尋', 'https://www.facebook.com/search/top?q=$phone'),
-          _buildPlatformRow('dcard', '💬', 'Dcard 搜尋', 'https://www.dcard.tw/search?q=$phone'),
-          _buildPlatformRow('ptt', '📋', 'PTT 搜尋', 'https://www.google.com/search?q=site:ptt.cc+$phone'),
+          _buildPlatformRow('facebook', '📘', 'Facebook 搜尋', 'https://www.google.com/search?q=site:facebook.com+$phone'),
+          _buildPlatformRow('dcard', '💬', 'Dcard 搜尋', 'https://www.google.com/search?q=site:dcard.tw+$phone'),
+          _buildPlatformRow('ptt', '📋', 'PTT 搜尋', 'https://www.google.com/search?q=site:ptt.cc+OR+site:www.ptt.cc+$phone'),
+          _buildPlatformRow('threads', '@', 'Threads 搜尋', 'https://www.google.com/search?q=site:threads.net+$phone'),
           
           const SizedBox(height: 8),
           const Divider(color: Colors.white24),
@@ -483,6 +682,188 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
               ),
             ),
           ),
+          
+          const SizedBox(height: 16),
+          
+          if (_isDeepSearching) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    '正在交叉比對全台商務黃頁與反詐資料庫...',
+                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${(_deepSearchProgress * 100).toInt()}%',
+                    style: const TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: _deepSearchProgress,
+                      backgroundColor: Colors.grey[800],
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.redAccent),
+                      minHeight: 4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (_showDeepSearchGuide) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.redAccent, width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.security, color: Colors.redAccent, size: 40),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '深度鑑識比對就緒！',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '請主動點擊按鈕前往 Google 深度鑑識網頁，進行網路黃頁比對：',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final phoneNumber = _phoneController.text.trim();
+                        final url = 'https://www.google.com/search?q=%22$phoneNumber%22+%28%E8%A9%90%E9%A8%99+OR+%E8%AA%B0%E6%89%93%E7%9A%84+OR+%E9%BB%83%E9%A0%81%29';
+                        _openUrl(url);
+                      },
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('手動點擊啟動深度鑑識', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFC62828),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  setState(() {
+                    _isDeepSearching = true;
+                    _deepSearchProgress = 0.0;
+                    _showDeepSearchGuide = false;
+                  });
+                  for (int i = 1; i <= 20; i++) {
+                    await Future.delayed(const Duration(milliseconds: 100));
+                    if (!mounted) return;
+                    setState(() {
+                      _deepSearchProgress = i / 20.0;
+                    });
+                  }
+                  if (mounted) {
+                    setState(() {
+                      _isDeepSearching = false;
+                      _showDeepSearchGuide = true;
+                    });
+                  }
+                },
+                icon: const Icon(Icons.youtube_searched_for, color: Colors.white),
+                label: const Text('啟動 Google 深度鑑識 (含網路黃頁)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC62828), // 高質感紅色系視覺
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                  ),
+                  elevation: 4,
+                  shadowColor: Colors.redAccent.withOpacity(0.4),
+                ),
+              ),
+            ),
+          ],
+          
+          const SizedBox(height: 16),
+          
+          // 商務定錨存證輸入框
+          TextField(
+            controller: _anchorUrlController,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: '請貼回查獲的黃頁或論壇網址進行定錨存證',
+              hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+              labelText: '商務定錨存證網址 / Anchor Evidence URL',
+              labelStyle: const TextStyle(color: Colors.redAccent, fontSize: 14),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.redAccent.withOpacity(0.5)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              prefixIcon: const Icon(Icons.link, color: Colors.redAccent),
+              filled: true,
+              fillColor: const Color(0xFF1E1010),
+            ),
+            onChanged: (val) {
+              setState(() {});
+            },
+          ),
+          
+          const SizedBox(height: 16),
+          
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final isGrace = await BillingService.checkGracePeriod();
+                if (isGrace) {
+                  await _executePdfGeneration();
+                } else {
+                  final isPremium = await BillingService.isPremiumUser();
+                  if (isPremium) {
+                    await _executePdfGeneration();
+                  } else {
+                    if (mounted) {
+                      BillingService.showPaywallDialog(context, () async {
+                        await _executePdfGeneration();
+                      });
+                    }
+                  }
+                }
+              },
+              icon: const Icon(Icons.description),
+              label: const Text('📄 產出PDF證據包 / Generate Evidence Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[700],
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 4,
+              ),
+            ),
+          ),
 
           const SizedBox(height: 16),
           const Text(
@@ -492,6 +873,17 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _executePdfGeneration() async {
+    if (_savedTimestamp == null) return;
+    await PdfGeneratorService.generateEvidenceReport(
+      context: context,
+      evidenceTimestamp: _savedTimestamp!.toIso8601String(),
+      searchedPhone: _phoneController.text.trim(),
+      phoneSearchStatus: _platformStatus,
+      anchorUrl: _anchorUrlController.text.trim(),
     );
   }
 
