@@ -30,6 +30,7 @@ dependencies:
   google_mobile_ads: ^5.1.0
   purchases_flutter: ^8.0.0
   firebase_remote_config: ^6.5.0
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -38,3 +39,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - .env

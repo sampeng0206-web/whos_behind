@@ -4,10 +4,27 @@ import 'screens/dashboard_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'services/billing_service.dart';
 import 'services/ad_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Load environment variables from .env
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Failed to load .env file: $e");
+  }
+
+  // Configure Purchases (RevenueCat) first at startup
+  final apiKey = dotenv.env['REVENUECAT_API_KEY'] ?? '';
+  try {
+    await Purchases.configure(PurchasesConfiguration(apiKey));
+  } catch (e) {
+    debugPrint("Failed to configure Purchases at main.dart top level: $e");
+  }
+
   try {
     await Firebase.initializeApp();
   } catch (e) {

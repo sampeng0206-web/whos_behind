@@ -11,10 +11,6 @@ class BillingService {
       // Configure RevenueCat logging
       await Purchases.setLogLevel(LogLevel.debug);
 
-      // Initialize RevenueCat configuration. We use a mock API key
-      // that can be configured/replaced.
-      const String apiKey = "appl_mock_api_key";
-      await Purchases.configure(PurchasesConfiguration(apiKey));
       _revenueCatConfigured = true;
 
       // Pre-fetch active premium status
