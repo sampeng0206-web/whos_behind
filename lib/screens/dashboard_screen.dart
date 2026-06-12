@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'search_screen.dart';
 import 'phone_search_screen.dart';
+import 'eula_consent_screen.dart';
+import 'trust_scan_screen.dart';
+import 'rental_risk_screen.dart';
+import 'evidence_capture_screen.dart';
 import '../services/ad_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -84,6 +88,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EulaConsentScreen(isReadOnlyMode: true),
+                ),
+              );
+            },
+            child: const Text('服務條款與免責聲明 (EULA)', style: TextStyle(color: Colors.white70)),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('我知道了 / Got it', style: TextStyle(color: Colors.redAccent)),
@@ -178,6 +194,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 48),
+
+                  // 朋友靠譜信任度掃描卡片
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: _buildFeatureCard(
+                      context: context,
+                      icon: '🤝',
+                      title: '朋友靠譜信任度掃描',
+                      subtitle: '交往、借錢、合夥創業必備工具',
+                      backgroundColor: const Color(0xFF0D1E3D), // 深藍色背景
+                      borderColor: const Color(0xFF007AFF), // 藍色發光邊框
+                      shadowColor: const Color(0xFF007AFF).withOpacity(0.4),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const TrustScanScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 租屋風險掃描器卡片
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: _buildFeatureCard(
+                      context: context,
+                      icon: '🏠',
+                      title: '租屋風險掃描器',
+                      subtitle: '看房、簽約、防假房東詐騙必備工具',
+                      backgroundColor: const Color(0xFF0B2818), // 深綠色背景
+                      borderColor: const Color(0xFF34C759), // 綠色發光邊框
+                      shadowColor: const Color(0xFF34C759).withOpacity(0.4),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RentalRiskScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 網購糾紛數位存證卡片
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: _buildFeatureCard(
+                      context: context,
+                      icon: '🛍️',
+                      title: '網購糾紛數位存證',
+                      subtitle: '網購商品、貼文與對話存證工具',
+                      backgroundColor: const Color(0xFF2E1A47), // 深專用紫色背景
+                      borderColor: const Color(0xFF9F75FF), // 紫色發光邊框
+                      shadowColor: const Color(0xFF9F75FF).withOpacity(0.4),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const EvidenceCaptureScreen()),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   // 第一張功能卡片
                   ConstrainedBox(

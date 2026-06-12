@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/eula_consent_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'services/billing_service.dart';
@@ -33,6 +35,7 @@ void main() async {
 
   try {
     await AdService.initialize();
+    AdService.loadInterstitialAd();
   } catch (e) {
     debugPrint("AdService initialization failed: $e");
   }
@@ -48,6 +51,16 @@ void main() async {
 
 class WhosBehindApp extends StatelessWidget {
   const WhosBehindApp({super.key});
+
+  Future<bool> _checkEulaStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('hasAcceptedEULA') ?? false;
+    } catch (e) {
+      debugPrint("Failed to read SharedPreferences for EULA: $e");
+      return false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +86,22 @@ class WhosBehindApp extends StatelessWidget {
           secondary: Colors.redAccent,
         ),
       ),
-      home: const DashboardScreen(),
+      home: FutureBuilder<bool>(
+        future: _checkEulaStatus(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(color: Colors.red),
+              ),
+            );
+          }
+          if (snapshot.hasData && snapshot.data == true) {
+            return const DashboardScreen();
+          }
+          return const EulaConsentScreen();
+        },
+      ),
     );
   }
 }

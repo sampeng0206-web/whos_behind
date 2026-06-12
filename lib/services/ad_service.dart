@@ -5,6 +5,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'billing_service.dart';
 
 class AdService {
+  static InterstitialAd? _interstitialAd;
+
   static Future<void> initialize() async {
     if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
       debugPrint("AdMob not supported on this platform.");
@@ -14,6 +16,78 @@ class AdService {
       await MobileAds.instance.initialize();
     } catch (e) {
       debugPrint("AdMob initialization failed: $e");
+    }
+  }
+
+  static Future<void> loadInterstitialAd() async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+      return;
+    }
+
+    if (await BillingService.isPremiumUser()) {
+      debugPrint("Premium user, skipping interstitial ad load.");
+      return;
+    }
+
+    final adUnitId = Platform.isIOS
+        ? 'ca-app-pub-3755777658581400/5746783718'
+        : 'ca-app-pub-3755777658581400/5746783718';
+
+    try {
+      await InterstitialAd.load(
+        adUnitId: adUnitId,
+        request: const AdRequest(),
+        adLoadCallback: InterstitialAdLoadCallback(
+          onAdLoaded: (InterstitialAd ad) {
+            debugPrint('InterstitialAd loaded successfully.');
+            _interstitialAd = ad;
+            _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+              onAdShowedFullScreenContent: (InterstitialAd ad) {
+                debugPrint('InterstitialAd showed full screen content.');
+              },
+              onAdDismissedFullScreenContent: (InterstitialAd ad) {
+                debugPrint('InterstitialAd dismissed full screen content.');
+                ad.dispose();
+                _interstitialAd = null;
+                loadInterstitialAd(); // Preload next
+              },
+              onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+                debugPrint('InterstitialAd failed to show full screen content: $error');
+                ad.dispose();
+                _interstitialAd = null;
+                loadInterstitialAd(); // Preload next
+              },
+              onAdImpression: (InterstitialAd ad) {
+                debugPrint('InterstitialAd impression recorded.');
+              },
+            );
+          },
+          onAdFailedToLoad: (LoadAdError error) {
+            debugPrint('InterstitialAd failed to load: $error');
+            _interstitialAd = null;
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint("Failed to load InterstitialAd: $e");
+    }
+  }
+
+  static Future<void> showInterstitialAd() async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS)) {
+      return;
+    }
+
+    if (await BillingService.isPremiumUser()) {
+      debugPrint("Premium user, skipping interstitial ad show.");
+      return;
+    }
+
+    if (_interstitialAd != null) {
+      await _interstitialAd!.show();
+      _interstitialAd = null;
+    } else {
+      debugPrint("Interstitial ad not loaded yet.");
     }
   }
 }
@@ -47,8 +121,8 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
 
     try {
       final adUnitId = Platform.isIOS
-          ? 'ca-app-pub-3940256099942544/2934735716' // Standard iOS test banner ad unit ID
-          : 'ca-app-pub-3940256099942544/6300978111'; // Standard Android test banner ad unit ID
+          ? 'ca-app-pub-3755777658581400/6122188232' // production iOS banner ID
+          : 'ca-app-pub-3755777658581400/6122188232'; // production Android banner ID
 
       _bannerAd = BannerAd(
         adUnitId: adUnitId,
@@ -96,3 +170,4 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     );
   }
 }
+

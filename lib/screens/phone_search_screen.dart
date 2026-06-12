@@ -147,6 +147,7 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
               'threads': null,
             };
           });
+          AdService.showInterstitialAd();
         }
       } else {
         // 1. 本機存證
@@ -169,6 +170,7 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
               'threads': null,
             };
           });
+          AdService.showInterstitialAd();
         }
       }
     } catch (e) {
@@ -836,23 +838,7 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () async {
-                final isGrace = await BillingService.checkGracePeriod();
-                if (isGrace) {
-                  await _executePdfGeneration();
-                } else {
-                  final isPremium = await BillingService.isPremiumUser();
-                  if (isPremium) {
-                    await _executePdfGeneration();
-                  } else {
-                    if (mounted) {
-                      BillingService.showPaywallDialog(context, () async {
-                        await _executePdfGeneration();
-                      });
-                    }
-                  }
-                }
-              },
+              onPressed: () => _showPdfConfirmDialog(context),
               icon: const Icon(Icons.description),
               label: const Text('📄 產出PDF證據包 / Generate Evidence Report', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
@@ -873,6 +859,95 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  static const String _pdfConfirmMessage =
+      '為保障您與他人的權益，請確認：\n\n'
+      '本次查詢與報告產出之對象資料，為您本人之相關權益爭議所需，\n'
+      '並非用於查詢、騷擾或調查與本案無關之第三人。\n\n'
+      '若違反前述聲明，產生之相關法律責任將由您自行承擔。';
+
+  void _showPdfConfirmDialog(BuildContext screenContext) {
+    bool isChecked = false;
+    showDialog(
+      context: screenContext,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[900],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                '產生證據報告前請確認',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    _pdfConfirmMessage,
+                    style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+                  ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    title: const Text(
+                      '我確認：這是我本人權益相關之資料',
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                    value: isChecked,
+                    activeColor: Colors.redAccent,
+                    onChanged: (val) {
+                      setState(() {
+                        isChecked = val ?? false;
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('取消', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: isChecked
+                      ? () async {
+                          Navigator.pop(dialogContext); // 關閉 dialog
+                          // 執行原本的 PDF 產生流程與付費檢測
+                          final isGrace = await BillingService.checkGracePeriod();
+                          if (isGrace) {
+                            await _executePdfGeneration();
+                          } else {
+                            final isPremium = await BillingService.isPremiumUser();
+                            if (isPremium) {
+                              await _executePdfGeneration();
+                            } else {
+                              if (mounted) {
+                                BillingService.showPaywallDialog(screenContext, () async {
+                                  await _executePdfGeneration();
+                                });
+                              }
+                            }
+                          }
+                        }
+                      : null,
+                  child: Text(
+                    '確認並產生 PDF',
+                    style: TextStyle(
+                      color: isChecked ? Colors.redAccent : Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

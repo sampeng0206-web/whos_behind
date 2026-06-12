@@ -3,6 +3,10 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class BillingService {
+  static const String _entitlementId = 'whos-behind Pro';
+  static const String _pdfSingleProductId = 'com.sampeng.whosbehind.pdf_single';
+  static const String _pdfYearlyProductId = 'com.sampeng.whosbehind.pdf_yearly';
+
   static bool _revenueCatConfigured = false;
   static bool _isPremiumCached = false;
 
@@ -24,7 +28,7 @@ class BillingService {
     if (!_revenueCatConfigured) return _isPremiumCached;
     try {
       final customerInfo = await Purchases.getCustomerInfo();
-      _isPremiumCached = customerInfo.entitlements.active.containsKey('pro');
+      _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
     } catch (e) {
       debugPrint("Failed to fetch customer info from RevenueCat: $e");
     }
@@ -64,7 +68,7 @@ class BillingService {
     }
     try {
       CustomerInfo customerInfo;
-      if (productId == 'com.sampeng.whosbehind.yearly_pro') {
+      if (productId == _pdfYearlyProductId) {
         final offerings = await Purchases.getOfferings();
         if (offerings.current != null && offerings.current!.annual != null) {
           customerInfo = await Purchases.purchasePackage(offerings.current!.annual!);
@@ -76,7 +80,7 @@ class BillingService {
         customerInfo = await Purchases.purchaseProduct(productId);
       }
       
-      _isPremiumCached = customerInfo.entitlements.active.containsKey('pro');
+      _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
       return true;
     } catch (e) {
       debugPrint("Purchase failed: $e");
@@ -91,7 +95,7 @@ class BillingService {
     }
     try {
       final customerInfo = await Purchases.restorePurchases();
-      _isPremiumCached = customerInfo.entitlements.active.containsKey('pro');
+      _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
       return true;
     } catch (e) {
       debugPrint("Restore purchases failed: $e");
@@ -213,7 +217,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                 
                 // Option 1: Consumable
                 _buildProductOption(
-                  id: "com.sampeng.whosbehind.single_pdf",
+                  id: BillingService._pdfSingleProductId,
                   titleZh: "單次產出 PDF 法律證據包",
                   titleEn: "Single PDF Evidence Export",
                   price: r"NT$199",
@@ -223,7 +227,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                 
                 // Option 2: Subscription
                 _buildProductOption(
-                  id: "com.sampeng.whosbehind.yearly_pro",
+                  id: BillingService._pdfYearlyProductId,
                   titleZh: "年訂閱・無限產出・全功能解鎖",
                   titleEn: "Yearly Pro・Unlimited・All Features",
                   price: r"NT$499／年",
