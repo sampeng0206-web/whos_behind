@@ -108,6 +108,11 @@ whos_behind/
 * **完全移除 GPS 定位與 geolocator 依賴**：為免除 Apple 審查對隱私收集（如 G5.1.1 隱私條款）的質疑，並實踐「地端全程無涉私個資」的核心承諾，本次更新全面移除了這三個新功能在 PDF 生成與評估過程中對 GPS 定位（即 `geolocator` 套件呼叫）之依賴，第一頁技術存證欄位中僅保留 Report ID 與時間戳記。
 * **執行緒安全與 Context 掛載防護**：全專案的異步操作（如 Cloudinary 上傳、金流驗證、PDF 生成與 Dialog 動態更新）在跨越異步 gaps 時，均嚴格執行 `if (!context.mounted) return;` 檢查，保證在 Context 卸載後不再調用其進行 UI 渲染或頁面跳轉，確保執行緒安全與 App 穩定度。
 
+## 🎯 v1.0.2 關鍵技術決定與偏離記錄 (v1.0.2 Key Technical Decisions & Deviations)
+
+### 1. 【正式環境金鑰更新】RevenueCat API 正式金鑰替換
+* **決定與更動**：為了讓應用程式能於正式環境中運作，已將 `.env` 中的 `REVENUECAT_API_KEY` 從測試用金鑰（`test_RBRYhvmbQSAoVPxZhxdAXUmitxU`）替換為正式環境金鑰（`appl_YzQldkpNUQsSynFSYWXWivmtpFl`），以利正式環境之 IAP 串接與付費狀態驗證。
+
 ---
 
 ## ⚡ 運行與驗證指南 (How to Run & Verify)
