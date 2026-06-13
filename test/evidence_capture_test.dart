@@ -62,10 +62,32 @@ void main() {
     });
 
     test('Evidence Capture Constants Limits Verification', () {
-      expect(EvidenceCaptureConstants.minCaptures, 3);
+      expect(EvidenceCaptureConstants.minCaptures, 1);
       expect(EvidenceCaptureConstants.maxCaptures, 6);
       expect(EvidenceCaptureConstants.maxCustomTagLength, 10);
       expect(EvidenceCaptureConstants.nodeTags.length, 8);
+    });
+
+    test('Evidence Capture Button Unlock Boundary Logic', () {
+      // 0 captures -> disabled / cannot export
+      const bool canExportWith0 = 0 >= EvidenceCaptureConstants.minCaptures &&
+          0 <= EvidenceCaptureConstants.maxCaptures;
+      expect(canExportWith0, false);
+
+      // 1 capture -> enabled / successfully unlocked
+      const bool canExportWith1 = 1 >= EvidenceCaptureConstants.minCaptures &&
+          1 <= EvidenceCaptureConstants.maxCaptures;
+      expect(canExportWith1, true);
+
+      // 6 captures -> enabled
+      const bool canExportWith6 = 6 >= EvidenceCaptureConstants.minCaptures &&
+          6 <= EvidenceCaptureConstants.maxCaptures;
+      expect(canExportWith6, true);
+
+      // 7 captures -> disabled / exceeds max
+      const bool canExportWith7 = 7 >= EvidenceCaptureConstants.minCaptures &&
+          7 <= EvidenceCaptureConstants.maxCaptures;
+      expect(canExportWith7, false);
     });
   });
 }

@@ -230,3 +230,11 @@ flutter run -d windows
     - 在ios/Runner/Info.plist中正式補上NSAppTransportSecurity並將NSAllowsArbitraryLoads設為true。此更動旨在解除iOS對非安全連線(HTTP)的預設封鎖，確保「網購糾紛數位存證」功能在真機載入多元複雜的第三方電商平台或廣告連結時，能流暢渲染且不觸發白畫面阻擋。
 15. **基準版本號前推升級(v1.0.1+8)**：
     - 將pubspec.yaml中的應用程式版本號由歷史的1.0.0+7正式推進至1.0.1+8。此調整作為v1.0.1正式提交TestFlight的環境基準，使原生flutter build ipa --release命令在不依賴任何外部雲端CI/CD環境變數的前提下，能自動且安全地向App Store Connect宣告遞增的Build號，完美避開後台Build衝突。
+16. **v1.0.2 三大新功能更新**：
+    - 【16. v1.0.2 三大新功能PDF全面中英雙語國際化、網購最低門檻降至1張、並徹底修復Emoji亂碼與多頁標題疊字視覺Bug。】
+
+---
+
+## ❓ 待釐清問題 (Pending Decisions / Risks)
+* 無。
+

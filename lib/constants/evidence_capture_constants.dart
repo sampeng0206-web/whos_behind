@@ -18,7 +18,7 @@ class EvidenceCaptureConstants {
   static const String pdfLegalStatement = 
       '本報告由『誰在亂搞？』App 內建瀏覽器於使用者操作當下即時擷取畫面，並記錄原始網址與系統時間戳記，全程於使用者裝置本機完成，未經第三方伺服器處理或人工修圖。本 PDF 檔案之 SHA-256 數位指紋可作為『報告產出後未經變動』之佐證。';
 
-  static const int minCaptures = 3;
+  static const int minCaptures = 1;
   static const int maxCaptures = 6;
   static const int maxCustomTagLength = 10;
 }
