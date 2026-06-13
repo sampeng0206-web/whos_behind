@@ -1501,6 +1501,7 @@ class PdfGeneratorService {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
                           children: [
                             pw.Container(
                               width: 8,
@@ -1511,9 +1512,11 @@ class PdfGeneratorService {
                               ),
                             ),
                             pw.SizedBox(width: 4),
-                            pw.Text(
-                              '重大風險警訊：本物件已觸發致命紅旗項目！',
-                              style: pw.TextStyle(font: fontBold, fontSize: 9.0, color: PdfColors.red900),
+                            pw.Expanded(
+                              child: pw.Text(
+                                '重大風險警訊：本物件已觸發致命紅旗項目！',
+                                style: pw.TextStyle(font: fontBold, fontSize: 9.0, color: PdfColors.red900),
+                              ),
                             ),
                           ],
                         ),
@@ -1582,6 +1585,7 @@ class PdfGeneratorService {
                           ],
                           pw.SizedBox(height: 4),
                           pw.Row(
+                            crossAxisAlignment: pw.CrossAxisAlignment.center,
                             children: [
                               pw.Text('安全燈號: ', style: boldContentStyle),
                               pw.Container(
@@ -1593,7 +1597,9 @@ class PdfGeneratorService {
                                 ),
                               ),
                               pw.SizedBox(width: 4),
-                              pw.Text('$cleanGradeTitle (Grade: ${gradeEn['title']})', style: boldContentStyle),
+                              pw.Expanded(
+                                child: pw.Text('$cleanGradeTitle (Grade: ${gradeEn['title']})', style: boldContentStyle),
+                              ),
                             ],
                           ),
                           pw.SizedBox(height: 4),
