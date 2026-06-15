@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class BillingService {
   static const String _entitlementId = 'whos-behind Pro';
@@ -15,17 +14,21 @@ class BillingService {
       // Configure RevenueCat logging
       await Purchases.setLogLevel(LogLevel.debug);
 
-      _revenueCatConfigured = true;
-
-      // Pre-fetch active premium status
-      await checkPremiumStatus();
+      if (await Purchases.isConfigured) {
+        _revenueCatConfigured = true;
+        // Pre-fetch active premium status
+        await checkPremiumStatus();
+      } else {
+        _revenueCatConfigured = false;
+      }
     } catch (e) {
+      _revenueCatConfigured = false;
       debugPrint("RevenueCat initialization failed: $e");
     }
   }
 
   static Future<bool> checkPremiumStatus() async {
-    if (!_revenueCatConfigured) return _isPremiumCached;
+    if (!_revenueCatConfigured) return false;
     try {
       final customerInfo = await Purchases.getCustomerInfo();
       _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
@@ -40,23 +43,7 @@ class BillingService {
   }
 
   static Future<bool> checkGracePeriod() async {
-    try {
-      final remoteConfig = FirebaseRemoteConfig.instance;
-      await remoteConfig.setConfigSettings(RemoteConfigSettings(
-        fetchTimeout: const Duration(seconds: 10),
-        minimumFetchInterval: const Duration(hours: 1),
-      ));
-      await remoteConfig.fetchAndActivate();
-      final gracePeriodEndDate = remoteConfig.getString('pdf_grace_period_end_date');
-      if (gracePeriodEndDate.isEmpty) return true; // default true if config not yet available
-      
-      final parsedDate = DateTime.parse(gracePeriodEndDate.trim());
-      return DateTime.now().isBefore(parsedDate);
-    } catch (e) {
-      debugPrint("Firebase Remote Config check failed, using local fallback: $e");
-      // Fallback: free tier period active for 3 months from today (2026-05-27), ending on 2026-08-27
-      return DateTime.now().isBefore(DateTime(2026, 8, 27));
-    }
+    return false;
   }
 
   static Future<bool> makePurchase(String productId) async {
