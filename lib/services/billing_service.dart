@@ -207,7 +207,7 @@ class _PaywallDialogState extends State<PaywallDialog> {
                   id: BillingService._pdfSingleProductId,
                   titleZh: "單次產出 PDF 法律證據包",
                   titleEn: "Single PDF Evidence Export",
-                  price: r"NT$199",
+                  price: r"NT$190",
                   note: "適合一次性急需",
                 ),
                 const SizedBox(height: 16),
