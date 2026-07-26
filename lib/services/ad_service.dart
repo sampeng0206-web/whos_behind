@@ -31,7 +31,7 @@ class AdService {
 
     final adUnitId = Platform.isIOS
         ? 'ca-app-pub-3755777658581400/5746783718'
-        : 'ca-app-pub-3755777658581400/5746783718';
+        : 'ca-app-pub-3755777658581400/1827615777';
 
     try {
       await InterstitialAd.load(
@@ -122,7 +122,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
     try {
       final adUnitId = Platform.isIOS
           ? 'ca-app-pub-3755777658581400/6122188232' // production iOS banner ID
-          : 'ca-app-pub-3755777658581400/6122188232'; // production Android banner ID
+          : 'ca-app-pub-3755777658581400/7132059133'; // production Android banner ID
 
       _bannerAd = BannerAd(
         adUnitId: adUnitId,

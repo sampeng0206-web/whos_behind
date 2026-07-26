@@ -8,6 +8,8 @@ import 'services/billing_service.dart';
 import 'services/ad_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,11 +22,21 @@ void main() async {
   }
 
   // Configure Purchases (RevenueCat) first at startup
-  final apiKey = dotenv.env['REVENUECAT_API_KEY'] ?? '';
-  try {
-    await Purchases.configure(PurchasesConfiguration(apiKey));
-  } catch (e) {
-    debugPrint("Failed to configure Purchases at main.dart top level: $e");
+  String apiKey = '';
+  if (!kIsWeb) {
+    if (Platform.isAndroid) {
+      apiKey = dotenv.env['REVENUECAT_API_KEY_ANDROID'] ?? '';
+    } else if (Platform.isIOS) {
+      apiKey = dotenv.env['REVENUECAT_API_KEY'] ?? '';
+    }
+  }
+
+  if (apiKey.isNotEmpty) {
+    try {
+      await Purchases.configure(PurchasesConfiguration(apiKey));
+    } catch (e) {
+      debugPrint("Failed to configure Purchases at main.dart top level: $e");
+    }
   }
 
   try {

@@ -243,3 +243,27 @@ flutter run -d windows
 ## ❓ 待釐清問題 (Pending Decisions / Risks)
 * 無。
 
+---
+
+## 🎯 v1.0.3 Android 上架調整與關鍵決定 (v1.0.3 Android Release Configuration & Key Decisions)
+
+### 1. 僅修改 `applicationId`，保留 `namespace` 不變 (方案 A)
+* **決定與取捨**：
+  * **決定**：本次調整僅將 `android/app/build.gradle.kts` 中的 `applicationId` 修改為 `"com.sampeng.whosbehind"`，而 `namespace` 則保留為原本的 `"com.example.whos_behind"`。
+  * **理由**：`applicationId` 是 Google Play 用於唯一識別與上架應用的標記，而 `namespace` 是 Android Gradle Plugin 於內部資源編譯產生的命名空間。兩者不一致完全不影響上架。為了避免搬移 native Kotlin 檔案路徑與變更 package 聲明帶來的額外重構風險與編譯失敗的可能，我們做出了維持 `namespace` 不變的實務取捨。
+
+### 2. 簽章安全動態讀取與 Debug 退回防呆
+* **決定與取捨**：
+  * **決定**：在 `build.gradle.kts` 中設計了 `key.properties` 讀取的防呆邏輯。如果該檔案存在，則使用 `release` 簽章；如果不存在（例如本機開發環境），則自動退回使用 `debug` 簽章。
+  * **好處**：這樣既滿足了 Codemagic CI/CD 執行時能夠在建置 release AAB 前讀取動態生成的 `key.properties` 進行正式簽章，又保障了本地開發者在沒有 `key.properties` 檔案的情況下依然能夠正常運行 `flutter run --release` 進行本地測試，避免了編譯中斷的問題。
+
+### 3. Codemagic 工作流 (android-release) 與環境變數保護
+* **決定與取捨**：
+  * **決定**：新增獨立的 `android-release` workflow，並且不影響現有的 iOS 與默認 build。在 build 腳本中，利用環境變數 `$CM_KEYSTORE_PASSWORD`, `$CM_KEY_PASSWORD`, `$CM_KEY_ALIAS` 動態寫入 `key.properties`，而不將密碼寫死在專案程式碼中。同時加入了 `$CM_KEYSTORE` Base64 解碼的防呆機制以確保 Keystore 二進制檔案能在 CI 環境中被還原。
+
+### 4. RevenueCat 與 AdMob 的平台分流組態
+* **決定與取捨**：
+  * **決定**：更新了 `lib/main.dart` 依平台讀取 API Key (iOS 讀取 `REVENUECAT_API_KEY`，Android 讀取 `REVENUECAT_API_KEY_ANDROID`)；同時在 `ad_service.dart` 區分 iOS 與 Android 的正式 Banner 與 Interstitial 廣告 ID。
+  * **好處**：透過與 Life Trigger 相同的 platform-specific 載入邏輯，成功隔離了兩平台的資料庫與收益歸屬，並在 `AndroidManifest.xml` 中更新了專屬的 AdMob Application ID 以免應用啟動時發生崩潰。
+
+
