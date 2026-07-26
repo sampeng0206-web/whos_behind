@@ -2,6 +2,8 @@ workflows:
   default-workflow:
     name: Default Workflow
     instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic CI
     environment:
       flutter: stable
       xcode: latest
