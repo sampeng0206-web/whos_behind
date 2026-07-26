@@ -29,6 +29,8 @@ workflows:
     name: Android Release Workflow
     instance_type: mac_mini_m2
     environment:
+      groups:
+        - android_signing
       flutter: stable
     scripts:
       - name: Generate key.properties
