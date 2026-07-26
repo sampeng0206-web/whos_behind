@@ -37,6 +37,10 @@ workflows:
           echo "keyPassword=$CM_KEY_PASSWORD" >> android/key.properties
           echo "keyAlias=$CM_KEY_ALIAS" >> android/key.properties
           echo "storeFile=whosbehind_keystore.jks" >> android/key.properties
+      - name: Generate .env file
+        script: |
+          echo "REVENUECAT_API_KEY=$REVENUECAT_API_KEY" > .env
+          echo "REVENUECAT_API_KEY_ANDROID=$REVENUECAT_API_KEY_ANDROID" >> .env
       - name: Decode Keystore
         script: |
           if [ -n "$CM_KEYSTORE" ]; then
