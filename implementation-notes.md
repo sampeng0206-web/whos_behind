@@ -266,4 +266,25 @@ flutter run -d windows
   * **決定**：更新了 `lib/main.dart` 依平台讀取 API Key (iOS 讀取 `REVENUECAT_API_KEY`，Android 讀取 `REVENUECAT_API_KEY_ANDROID`)；同時在 `ad_service.dart` 區分 iOS 與 Android 的正式 Banner 與 Interstitial 廣告 ID。
   * **好處**：透過與 Life Trigger 相同的 platform-specific 載入邏輯，成功隔離了兩平台的資料庫與收益歸屬，並在 `AndroidManifest.xml` 中更新了專屬的 AdMob Application ID 以免應用啟動時發生崩潰。
 
+## 🎯 v1.0.4 Purchases Flutter 升級與消耗型購買邏輯修正 (v1.0.4 Purchases Flutter Upgrade & Consumable Logic Fix)
+
+### 1. purchases_flutter 升級至 v10.4.1 (實鎖 10.4.3)
+* **決定與理由**：
+  * **決定**：將 `purchases_flutter` 從 v8.11.0 升級到 v10.4.1 (實際安裝鎖定 v10.4.3)。
+  * **理由**：為了解除 Google Play Console 關於 Google Play Billing Library 7.x 淘汰的警告（PBL 7.x 於 2026年8月31日淘汰，屆時將被拒絕更新）。新版 SDK 底層依賴 Google Play Billing Library 8.3.0 (PBL 8.x)，能順暢通過 Play Console 審查，並延長合規支持期限至 2027年8月31日。
+  * **底層更動與適配**：
+    * 提升 Android `minSdkVersion` 至 **23** (Android 6.0 Marshmallow)，以滿足新版 SDK 最低運行要求。
+    * 修改 `lib/services/billing_service.dart` 中購買與恢復購買回傳值。因新版 SDK 變更 API 簽名（`purchaseProduct`/`purchasePackage` 回傳 `PurchaseResult`），已全面適配使用 `result.customerInfo` 提取付費狀態。
+
+### 2. 修正 pdf_single 消耗型商品 (Consumable) 與 Entitlement 綁定之邏輯衝突
+* **決定與理由**：
+  * **背景與衝突**：`pdf_single` (NT$190) 的商業設計為「單次付費產出，每次產出皆須重新購買」，而在 RevenueCat 後台卻將其與 `whos-behind Pro` 權限（Entitlement）綁定，且 Product Type 為 Consumable。原 App 代碼在所有判斷處均透過 `customerInfo.entitlements.active.containsKey('whos-behind Pro')` 來檢測，這會導致用戶只要購買過一次 `pdf_single`，在該筆消耗型交易記錄被消耗前，會因為 active entitlements 暫時包含該權限而被判定為「永久解鎖 Pro」，與原設計不符。
+  * **修改決定**：
+    1. **單次購買流程去權限化**：在 `makePurchase` 中購買 `pdf_single` 時，直接以呼叫 `Purchases.purchaseProduct()` 成功回傳（且未拋出例外或取消）作為這次交易成功的判斷依據。成功即直接返回 `true` 開啟當次 PDF 產出流程，而**不再將全域權限緩存變數 `_isPremiumCached` 修改為 true**。
+    2. **Entitlement 與產品綁定判斷過濾**：修改 `checkPremiumStatus` 與 `restorePurchases` 邏輯，將全域 Pro 權限之快取條件嚴格限定為 `entitlement.productIdentifier == _pdfYearlyProductId`。如此一來，即使 `pdf_single` 目前在 RevenueCat 後台依然與 `whos-behind Pro` 綁定，App 端也會因其產品識別碼不符合訂閱 ID（`pdf_yearly`）而將其過濾，**不會意外將其判定為全域解鎖 Pro**。
+    3. **訂閱邏輯完整保留**：年訂閱項目 `pdf_yearly` 維持既有 logic，使用 Entitlement 機制進行週期性權限檢驗。
+  * **待辦事項 (Mergence Checklist)**：
+    * > [!IMPORTANT]
+    * > **待辦事項 (Mergence Checklist)**：目前 iOS/Android 共用代碼已完成修正。新版 App 送審 App Store / Google Play **正式上架後**，管理員必須手動至 **RevenueCat Console** 將 `pdf_single` 產品與 `whos-behind Pro` entitlement **解除綁定關係**，以確保新舊金流邏輯完全同步。
+
 

@@ -31,7 +31,9 @@ class BillingService {
     if (!_revenueCatConfigured) return false;
     try {
       final customerInfo = await Purchases.getCustomerInfo();
-      _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
+      final entitlement = customerInfo.entitlements.active[_entitlementId];
+      // Only yearly subscription unlocks permanent active Pro cache
+      _isPremiumCached = entitlement != null && entitlement.productIdentifier == _pdfYearlyProductId;
     } catch (e) {
       debugPrint("Failed to fetch customer info from RevenueCat: $e");
     }
@@ -50,13 +52,15 @@ class BillingService {
     if (!_revenueCatConfigured) {
       // Mock purchase in development mode
       debugPrint("Mocking purchase success for: $productId");
-      _isPremiumCached = true;
+      if (productId == _pdfYearlyProductId) {
+        _isPremiumCached = true;
+      }
       return true;
     }
     try {
-      CustomerInfo customerInfo;
       if (productId == _pdfYearlyProductId) {
         final offerings = await Purchases.getOfferings();
+        CustomerInfo customerInfo;
         if (offerings.current != null && offerings.current!.annual != null) {
           final result = await Purchases.purchasePackage(offerings.current!.annual!);
           customerInfo = result.customerInfo;
@@ -64,13 +68,13 @@ class BillingService {
           final result = await Purchases.purchaseProduct(productId);
           customerInfo = result.customerInfo;
         }
+        final entitlement = customerInfo.entitlements.active[_entitlementId];
+        _isPremiumCached = entitlement != null && entitlement.productIdentifier == _pdfYearlyProductId;
       } else {
-        // Consumable package
-        final result = await Purchases.purchaseProduct(productId);
-        customerInfo = result.customerInfo;
+        // Consumable package (pdf_single)
+        // Just perform the purchase and return success (true). Do not modify _isPremiumCached.
+        await Purchases.purchaseProduct(productId);
       }
-      
-      _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
       return true;
     } catch (e) {
       debugPrint("Purchase failed: $e");
@@ -85,7 +89,8 @@ class BillingService {
     }
     try {
       final customerInfo = await Purchases.restorePurchases();
-      _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
+      final entitlement = customerInfo.entitlements.active[_entitlementId];
+      _isPremiumCached = entitlement != null && entitlement.productIdentifier == _pdfYearlyProductId;
       return true;
     } catch (e) {
       debugPrint("Restore purchases failed: $e");
