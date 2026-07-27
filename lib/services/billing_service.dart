@@ -58,13 +58,16 @@ class BillingService {
       if (productId == _pdfYearlyProductId) {
         final offerings = await Purchases.getOfferings();
         if (offerings.current != null && offerings.current!.annual != null) {
-          customerInfo = await Purchases.purchasePackage(offerings.current!.annual!);
+          final result = await Purchases.purchasePackage(offerings.current!.annual!);
+          customerInfo = result.customerInfo;
         } else {
-          customerInfo = await Purchases.purchaseProduct(productId);
+          final result = await Purchases.purchaseProduct(productId);
+          customerInfo = result.customerInfo;
         }
       } else {
         // Consumable package
-        customerInfo = await Purchases.purchaseProduct(productId);
+        final result = await Purchases.purchaseProduct(productId);
+        customerInfo = result.customerInfo;
       }
       
       _isPremiumCached = customerInfo.entitlements.active.containsKey(_entitlementId);
