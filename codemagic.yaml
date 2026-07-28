@@ -43,7 +43,7 @@ workflows:
               <key>provisioningProfiles</key>
               <dict>
                   <key>com.sampeng.whosbehind</key>
-                  <string>whos_behind_appstore_v2</string>
+                  <string>whos behind ios_app_store 1780014496</string>
               </dict>
           </dict>
           </plist>
