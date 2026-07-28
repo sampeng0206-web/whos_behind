@@ -7,6 +7,8 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      groups:
+        - REVENUECAT_KEYS
       ios_signing:
         provisioning_profiles:
           - whos_behind_appstore_v2
@@ -15,6 +17,9 @@ workflows:
     scripts:
       - name: Disable Swift Package Manager
         script: flutter config --no-enable-swift-package-manager
+      - name: Generate .env file
+        script: |
+          echo "REVENUECAT_API_KEY=$REVENUECAT_API_KEY" > .env
       - name: Get Flutter packages
         script: flutter packages pub get
       - name: Install pods
