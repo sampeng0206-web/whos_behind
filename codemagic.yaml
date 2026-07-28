@@ -13,6 +13,7 @@ workflows:
         provisioning_profiles:
           - whos_behind_appstore_v2
         certificates:
+          - whos_behind_dist
           - whos_behind_dist_2
     scripts:
       - name: Disable Swift Package Manager
