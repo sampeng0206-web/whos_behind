@@ -11,9 +11,9 @@ workflows:
         - REVENUECAT_KEYS
       ios_signing:
         provisioning_profiles:
-          - whos_behind_appstore_v2
+          - whos behind ios_app_store 1780014496
         certificates:
-          - whos_behind_dist
+          - whos_behind_dist_2
     scripts:
       - name: Disable Swift Package Manager
         script: flutter config --no-enable-swift-package-manager
