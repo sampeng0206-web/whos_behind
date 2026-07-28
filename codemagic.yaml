@@ -7,6 +7,11 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      ios_signing:
+        provisioning_profiles:
+          - whos_behind_appstore_v2
+        certificates:
+          - whos_behind_dist
     scripts:
       - name: Disable Swift Package Manager
         script: flutter config --no-enable-swift-package-manager
@@ -14,6 +19,8 @@ workflows:
         script: flutter packages pub get
       - name: Install pods
         script: find . -name "Podfile" -execdir pod install \;
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
       - name: Build iOS
         script: flutter build ipa --release
     artifacts:
