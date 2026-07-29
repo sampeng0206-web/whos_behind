@@ -11,13 +11,9 @@ workflows:
         - REVENUECAT_KEYS
       ios_signing:
         provisioning_profiles:
-          - whos_behind_appstore_v2
+          - whos_behind_appstore_v3
         certificates:
-          - leekcast_tw_distribution_v2
-          - leekcast_tw_dist_v3
-          - moneyback_dist
           - legacyflow_dist
-          - whos_behind_dist_2
     scripts:
       - name: Disable Swift Package Manager
         script: flutter config --no-enable-swift-package-manager
