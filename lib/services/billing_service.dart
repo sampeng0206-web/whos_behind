@@ -58,14 +58,25 @@ class BillingService {
       return true;
     }
     try {
+      CustomerInfo customerInfo;
       if (productId == _pdfYearlyProductId) {
         final offerings = await Purchases.getOfferings();
-        CustomerInfo customerInfo;
         if (offerings.current != null && offerings.current!.annual != null) {
-          final result = await Purchases.purchasePackage(offerings.current!.annual!);
+          final result = await Purchases.purchase(
+            PurchaseParams.package(offerings.current!.annual!),
+          );
           customerInfo = result.customerInfo;
         } else {
-          final result = await Purchases.purchaseProduct(productId);
+          final products = await Purchases.getProducts(
+            [productId],
+            productCategory: ProductCategory.subscription,
+          );
+          if (products.isEmpty) {
+            throw Exception("Product not found: $productId");
+          }
+          final result = await Purchases.purchase(
+            PurchaseParams.storeProduct(products.first),
+          );
           customerInfo = result.customerInfo;
         }
         final entitlement = customerInfo.entitlements.active[_entitlementId];
@@ -73,7 +84,16 @@ class BillingService {
       } else {
         // Consumable package (pdf_single)
         // Just perform the purchase and return success (true). Do not modify _isPremiumCached.
-        await Purchases.purchaseProduct(productId);
+        final products = await Purchases.getProducts(
+          [productId],
+          productCategory: ProductCategory.nonSubscription,
+        );
+        if (products.isEmpty) {
+          throw Exception("Product not found: $productId");
+        }
+        await Purchases.purchase(
+          PurchaseParams.storeProduct(products.first),
+        );
       }
       return true;
     } catch (e) {
