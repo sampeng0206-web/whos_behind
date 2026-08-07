@@ -14,5 +14,4 @@ key.properties
 **/*.jks
 
 # Firebase keys and Google Services configuration
-google-services.json
 *service-account*.json

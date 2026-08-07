@@ -6,7 +6,8 @@ import 'eula_consent_screen.dart';
 import 'trust_scan_screen.dart';
 import 'rental_risk_screen.dart';
 import 'evidence_capture_screen.dart';
-import '../services/ad_service.dart';
+import '../widgets/remote_ad_banner.dart';
+import '../services/billing_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -393,7 +394,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AdBannerWidget(),
+          FutureBuilder<bool>(
+            future: BillingService.isPremiumUser(),
+            builder: (context, snapshot) {
+              final isPremium = snapshot.data ?? false;
+              return RemoteAdBanner(shouldShow: !isPremium);
+            },
+          ),
           Container(
             color: const Color(0xFF1A1A1A), // 深灰色背景
             child: SafeArea(

@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import '../services/pdf_generator_service.dart';
 import '../services/billing_service.dart';
-import '../services/ad_service.dart';
+import '../widgets/remote_ad_banner.dart';
 
 class SearchScreen extends StatefulWidget {
   final bool autoOpenImagePicker;
@@ -163,7 +163,6 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _hasAutoOpened = true;
       });
-      AdService.showInterstitialAd();
     }
   }
 
@@ -757,7 +756,13 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: const AdBannerWidget(),
+      bottomNavigationBar: FutureBuilder<bool>(
+        future: BillingService.isPremiumUser(),
+        builder: (context, snapshot) {
+          final isPremium = snapshot.data ?? false;
+          return RemoteAdBanner(shouldShow: !isPremium);
+        },
+      ),
     );
   }
 }

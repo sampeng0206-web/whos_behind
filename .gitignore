@@ -51,6 +51,5 @@ app.*.map.json
 *.p8
 
 # Firebase keys and Google Services configuration
-**/google-services.json
 **/*service-account*.json
 

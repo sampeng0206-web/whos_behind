@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/db_helper.dart';
 import '../services/pdf_generator_service.dart';
 import '../services/billing_service.dart';
-import '../services/ad_service.dart';
+import '../widgets/remote_ad_banner.dart';
 
 class PhoneSearchScreen extends StatefulWidget {
   const PhoneSearchScreen({super.key});
@@ -147,7 +147,6 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
               'threads': null,
             };
           });
-          AdService.showInterstitialAd();
         }
       } else {
         // 1. 本機存證
@@ -170,7 +169,6 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
               'threads': null,
             };
           });
-          AdService.showInterstitialAd();
         }
       }
     } catch (e) {
@@ -233,7 +231,13 @@ class _PhoneSearchScreenState extends State<PhoneSearchScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _selectedMode != null ? _buildInputScreen() : _buildSelectionScreen(),
-      bottomNavigationBar: const AdBannerWidget(),
+      bottomNavigationBar: FutureBuilder<bool>(
+        future: BillingService.isPremiumUser(),
+        builder: (context, snapshot) {
+          final isPremium = snapshot.data ?? false;
+          return RemoteAdBanner(shouldShow: !isPremium);
+        },
+      ),
     );
   }
 

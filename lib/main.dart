@@ -4,8 +4,8 @@ import 'screens/eula_consent_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'services/billing_service.dart';
-import 'services/ad_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'dart:io' show Platform;
@@ -40,16 +40,24 @@ void main() async {
   }
 
   try {
-    await Firebase.initializeApp();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+    final remoteConfig = FirebaseRemoteConfig.instance;
+    await remoteConfig.setConfigSettings(RemoteConfigSettings(
+      fetchTimeout: const Duration(seconds: 10),
+      minimumFetchInterval: const Duration(hours: 1),
+    ));
+    await remoteConfig.setDefaults(const {
+      'ad_banner_enabled': true,
+      'ad_banner_image_url': '',
+      'ad_banner_target_url': 'mailto:sampeng0206@gmail.com',
+      'ad_banner_link_type': 'mailto',
+    });
+    await remoteConfig.fetchAndActivate();
+    debugPrint("Firebase Core and Remote Config initialized successfully.");
   } catch (e) {
-    debugPrint("Firebase Core initialization failed: $e");
-  }
-
-  try {
-    await AdService.initialize();
-    AdService.loadInterstitialAd();
-  } catch (e) {
-    debugPrint("AdService initialization failed: $e");
+    debugPrint("Firebase Core/Remote Config initialization failed: $e");
   }
 
   try {

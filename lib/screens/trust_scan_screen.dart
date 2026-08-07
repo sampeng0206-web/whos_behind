@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/trust_scan_constants.dart';
 import '../services/billing_service.dart';
 import '../services/pdf_generator_service.dart';
-import '../services/ad_service.dart';
+import '../widgets/remote_ad_banner.dart';
 
 class TrustScanScreen extends StatefulWidget {
   const TrustScanScreen({super.key});
@@ -63,8 +63,7 @@ class _TrustScanScreenState extends State<TrustScanScreen> {
       setState(() {
         _isScanCompleted = true;
       });
-      // Trigger Interstitial Ad after finishing questionnaire
-      AdService.showInterstitialAd();
+      // Trigger Interstitial Ad after finishing questionnaire (Removed AdMob)
     }
   }
 
@@ -222,7 +221,13 @@ class _TrustScanScreenState extends State<TrustScanScreen> {
       body: SafeArea(
         child: _isScanCompleted ? _buildResultPanel() : _buildQuestionnaireFlow(),
       ),
-      bottomNavigationBar: const AdBannerWidget(),
+      bottomNavigationBar: FutureBuilder<bool>(
+        future: BillingService.isPremiumUser(),
+        builder: (context, snapshot) {
+          final isPremium = snapshot.data ?? false;
+          return RemoteAdBanner(shouldShow: !isPremium);
+        },
+      ),
     );
   }
 

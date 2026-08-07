@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/rental_risk_constants.dart';
 import '../services/billing_service.dart';
 import '../services/pdf_generator_service.dart';
-import '../services/ad_service.dart';
+import '../widgets/remote_ad_banner.dart';
 
 class RentalRiskScreen extends StatefulWidget {
   const RentalRiskScreen({super.key});
@@ -87,8 +87,7 @@ class _RentalRiskScreenState extends State<RentalRiskScreen> {
       setState(() {
         _isScanCompleted = true;
       });
-      // Trigger Interstitial Ad after finishing questionnaire
-      AdService.showInterstitialAd();
+      // Trigger Interstitial Ad after finishing questionnaire (Removed AdMob)
     }
   }
 
@@ -253,7 +252,13 @@ class _RentalRiskScreenState extends State<RentalRiskScreen> {
       body: SafeArea(
         child: _isScanCompleted ? _buildResultPanel() : _buildQuestionnaireFlow(),
       ),
-      bottomNavigationBar: const AdBannerWidget(),
+      bottomNavigationBar: FutureBuilder<bool>(
+        future: BillingService.isPremiumUser(),
+        builder: (context, snapshot) {
+          final isPremium = snapshot.data ?? false;
+          return RemoteAdBanner(shouldShow: !isPremium);
+        },
+      ),
     );
   }
 
