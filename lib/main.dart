@@ -43,6 +43,12 @@ void main() async {
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp();
     }
+    debugPrint("Firebase Core initialized successfully.");
+  } catch (e) {
+    debugPrint("Firebase Core initialization failed: $e");
+  }
+
+  try {
     final remoteConfig = FirebaseRemoteConfig.instance;
     await remoteConfig.setConfigSettings(RemoteConfigSettings(
       fetchTimeout: const Duration(seconds: 10),
@@ -55,9 +61,9 @@ void main() async {
       'ad_banner_link_type': 'mailto',
     });
     await remoteConfig.fetchAndActivate();
-    debugPrint("Firebase Core and Remote Config initialized successfully.");
+    debugPrint("Firebase Remote Config initialized successfully.");
   } catch (e) {
-    debugPrint("Firebase Core/Remote Config initialization failed: $e");
+    debugPrint("Firebase Remote Config initialization failed: $e");
   }
 
   try {
